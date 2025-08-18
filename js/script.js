@@ -1,70 +1,66 @@
-// Bloco de proteção (executado imediatamente antes de a página carregar)
 const loggedInUser = localStorage.getItem('loggedInUser');
 if (!loggedInUser) {
-    // Se não houver usuário logado, o acesso é bloqueado ANTES da página carregar.
     alert('Acesso negado. Por favor, faça o login.');
     window.location.href = 'login.html';
 } else {
-    // Se o usuário estiver logado, a página pode ser mostrada.
-    // O evento DOMContentLoaded garante que o HTML exista antes de tentarmos manipulá-lo.
     document.addEventListener('DOMContentLoaded', function() {
         
-        // Mostra o corpo da página, que estava escondido para evitar "piscar" na tela
         document.body.classList.remove('hidden');
 
-        // --- LÓGICA DE LOGOUT ---
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('loggedInUser');
-                alert('Você saiu do sistema.');
-                window.location.href = 'login.html';
-            });
-        }
+        const backToMenuBtn = document.getElementById('backToMenuBtn');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+        const form = document.getElementById('checklistForm');
+        const customConfirmModal = document.getElementById('customConfirmModal');
+        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmNoBtn = document.getElementById('confirmNoBtn');
 
-        // Atualiza o campo de segurança com o nome do usuário
+        function saveCurrentDraft() {
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else { data[key] = value; }
+            });
+            document.querySelectorAll('.preview-container[data-base64]').forEach(container => {
+                const itemId = container.closest('.checklist-item').dataset.itemId;
+                if (itemId) data[`evidencia${itemId}`] = container.dataset.base64;
+            });
+            localStorage.setItem('checklistRondaDraft', JSON.stringify(data));
+            alert('Rascunho salvo com sucesso!');
+        }
+        
+        if (saveDraftBtn) saveDraftBtn.addEventListener('click', (e) => { e.preventDefault(); saveCurrentDraft(); });
+        if (backToMenuBtn) backToMenuBtn.addEventListener('click', (e) => { e.preventDefault(); customConfirmModal.classList.remove('hidden'); });
+        if (confirmYesBtn) confirmYesBtn.addEventListener('click', () => { saveCurrentDraft(); customConfirmModal.classList.add('hidden'); window.location.href = 'menu.html'; });
+        if (confirmNoBtn) confirmNoBtn.addEventListener('click', () => { customConfirmModal.classList.add('hidden'); window.location.href = 'menu.html'; });
+        
         const securityUserInput = document.getElementById('securityUser');
         if (securityUserInput) securityUserInput.value = loggedInUser;
-
-        const form = document.getElementById('checklistForm');
-        if (!form) return;
-
-        // --- INICIALIZAÇÃO DO FORMULÁRIO ---
+        
         const now = new Date();
         document.getElementById('checkDate').value = now.toISOString().split('T')[0];
         document.getElementById('checkTime').value = now.toTimeString().split(' ')[0].substring(0, 5);
 
-        // --- LÓGICA DE UPLOAD DE ARQUIVO ---
         document.querySelectorAll('.checklist-item').forEach(item => {
             const takePhotoBtn = item.querySelector('.take-photo-btn');
             const uploadBtn = item.querySelector('.upload-btn');
             const fileInput = item.querySelector('.file-input');
             const previewContainer = item.querySelector('.preview-container');
-
-            if (takePhotoBtn) {
-                takePhotoBtn.addEventListener('click', () => {
-                    fileInput.setAttribute('capture', 'user'); // Pede para abrir a câmera
-                    fileInput.click();
-                });
-            }
-            if (uploadBtn) {
-                uploadBtn.addEventListener('click', () => {
-                    fileInput.removeAttribute('capture'); // Garante que abra a galeria
-                    fileInput.click();
-                });
-            }
+            if (takePhotoBtn) takePhotoBtn.addEventListener('click', () => { fileInput.setAttribute('capture', 'user'); fileInput.click(); });
+            if (uploadBtn) uploadBtn.addEventListener('click', () => { fileInput.removeAttribute('capture'); fileInput.click(); });
             if (fileInput) {
                 fileInput.addEventListener('change', (event) => {
                     const file = event.target.files[0];
                     if (!file) return;
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        previewContainer.innerHTML = ''; // Limpa pré-visualizações antigas
+                        previewContainer.innerHTML = '';
                         const img = document.createElement('img');
                         img.src = e.target.result;
                         img.classList.add('image-preview');
                         previewContainer.appendChild(img);
-                        // Armazena o dado da imagem (Base64) no próprio container para fácil acesso
                         previewContainer.dataset.base64 = e.target.result;
                     };
                     reader.readAsDataURL(file);
@@ -72,51 +68,103 @@ if (!loggedInUser) {
             }
         });
 
-        // --- LÓGICA DE VISIBILIDADE E VALIDAÇÃO ---
-        
-        // Lógica para mostrar/esconder a seção de observação e upload
-        document.querySelectorAll('.checklist-item input[type="radio"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                const container = radio.closest('.checklist-item');
-                const observacaoContainer = container.querySelector('.observacao-container');
-                if (observacaoContainer) {
-                    if (radio.value === 'nao' && radio.checked) {
-                        observacaoContainer.classList.remove('hidden');
-                    } else {
-                        observacaoContainer.classList.add('hidden');
-                    }
-                }
-            });
-        });
-
-        const comDocumentoRadio = document.getElementById('comDocumento');
-        const semDocumentoRadio = document.getElementById('semDocumento');
+        const radioDocSim = document.querySelector('input[name="checkDocumentoTransporte"][value="sim"]');
+        const radioDocNao = document.querySelector('input[name="checkDocumentoTransporte"][value="nao"]');
         const detalhesComDocumento = document.getElementById('detalhesComDocumento');
         const detalhesSemDocumento = document.getElementById('detalhesSemDocumento');
         const numeroDocumentoInput = document.getElementById('numeroDocumento');
         const descricaoProdutosTextarea = document.getElementById('descricaoProdutos');
 
-        function toggleDocumentoDetails() {
-            if (comDocumentoRadio.checked) {
+        function toggleDocumentoTransporteDetails() {
+            if (radioDocSim.checked) {
                 detalhesComDocumento.classList.remove('hidden');
                 numeroDocumentoInput.required = true;
                 detalhesSemDocumento.classList.add('hidden');
                 descricaoProdutosTextarea.required = false;
-            } else if (semDocumentoRadio.checked) {
+            } else if (radioDocNao.checked) {
                 detalhesComDocumento.classList.add('hidden');
                 numeroDocumentoInput.required = false;
                 detalhesSemDocumento.classList.remove('hidden');
                 descricaoProdutosTextarea.required = true;
             }
+            validateForm();
         }
-        comDocumentoRadio.addEventListener('change', toggleDocumentoDetails);
-        semDocumentoRadio.addEventListener('change', toggleDocumentoDetails);
+        radioDocSim.addEventListener('change', toggleDocumentoTransporteDetails);
+        radioDocNao.addEventListener('change', toggleDocumentoTransporteDetails);
 
-        // --- AÇÃO FINAL (ENVIAR PARA O BACKEND) ---
+        document.querySelectorAll('.checklist-item input[type="radio"]').forEach(radio => {
+            if (radio.name === 'checkDocumentoTransporte') return;
+            radio.addEventListener('change', () => {
+                const container = radio.closest('.checklist-item');
+                const observacaoContainer = container.querySelector('.observacao-container');
+                if (observacaoContainer) {
+                    if (radio.value === 'nao' && radio.checked) observacaoContainer.classList.remove('hidden');
+                    else observacaoContainer.classList.add('hidden');
+                }
+            });
+        });
+
+        const statusChecagemSpan = document.getElementById('statusChecagem');
+        const checklistRadios = document.querySelectorAll('.checklist-item input[type="radio"]');
+
+        function updateFinalStatus() {
+            let naoConformeEncontrado = false;
+            document.querySelectorAll('.checklist-item input[value="nao"]:checked').forEach(() => { naoConformeEncontrado = true; });
+            statusChecagemSpan.classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+            if (naoConformeEncontrado) {
+                statusChecagemSpan.textContent = 'Não Conforme';
+                statusChecagemSpan.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                statusChecagemSpan.textContent = 'Conforme';
+                statusChecagemSpan.classList.add('bg-green-100', 'text-green-800');
+            }
+        }
+        checklistRadios.forEach(radio => radio.addEventListener('change', updateFinalStatus));
+        
+        const finalizarBtn = document.getElementById('finalizarBtn');
+        function validateForm() {
+            let isFormValid = true;
+            const requiredInputs = form.querySelectorAll('[required]');
+
+            requiredInputs.forEach(input => {
+                if (input.offsetParent !== null) {
+                    if (input.type === 'radio') {
+                        const groupName = input.name;
+                        if (!form.querySelector(`input[name="${groupName}"]:checked`)) isFormValid = false;
+                    } else if (!input.value.trim()) {
+                        isFormValid = false;
+                    }
+                }
+            });
+            
+            const produtosChecked = form.querySelectorAll('input[name="tipoProduto"]:checked');
+            if (produtosChecked.length > 0) {
+                let allQuantitiesFilled = true;
+                produtosChecked.forEach(checkbox => {
+                    const qtdInput = document.querySelector(`input[name="qtd${checkbox.id.replace('tipoP', 'P')}"]`);
+                    if (!qtdInput || !qtdInput.value || parseInt(qtdInput.value) < 1) allQuantitiesFilled = false;
+                });
+                if (!allQuantitiesFilled) isFormValid = false;
+            } else {
+                isFormValid = false;
+            }
+
+            finalizarBtn.disabled = !isFormValid;
+        }
+
+        form.addEventListener('input', validateForm);
+        form.addEventListener('change', validateForm);
+        
+        updateFinalStatus();
+        validateForm();
+
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            // Adicionar validação do botão finalizar aqui se necessário
-
+            if (finalizarBtn.disabled) {
+                alert('Por favor, preencha todos os campos obrigatórios antes de finalizar.');
+                return;
+            }
+            
             const dadosParaSalvar = {
                 dataChecagem: document.getElementById('checkDate').value,
                 horaChecagem: document.getElementById('checkTime').value,
@@ -125,43 +173,36 @@ if (!loggedInUser) {
                 setorOrigem: document.getElementById('setorOrigem').value,
                 setorDestino: document.getElementById('setorDestino').value,
                 produtos: [],
-                validacaoDocumento: form.querySelector('input[name="validacaoDocumento"]:checked')?.value,
-                numeroDocumento: document.getElementById('numeroDocumento').value,
-                descricaoProdutos: document.getElementById('descricaoProdutos').value,
                 checklistConformidade: {},
                 numeroLacre: document.getElementById('numeroLacre').value,
                 observacaoGeral: document.getElementById('obsGeral').value,
                 statusFinal: document.getElementById('statusChecagem')?.textContent || 'Não definido'
             };
 
-            // Coleta os produtos
-            form.querySelectorAll('input[name="tipoProduto"]:checked').forEach(checkbox => {
-                const qtdInput = document.querySelector(`input[name="qtd${checkbox.id.replace('tipoP', 'P')}"]`);
-                dadosParaSalvar.produtos.push({
-                    tipo: checkbox.nextElementSibling.textContent,
-                    quantidade: parseInt(qtdInput.value) || 0
-                });
+            form.querySelectorAll('input[name="tipoProduto"]:checked').forEach(c => {
+                const qtd = document.querySelector(`input[name="qtd${c.id.replace('tipoP', 'P')}"]`);
+                dadosParaSalvar.produtos.push({ tipo: c.nextElementSibling.textContent, quantidade: parseInt(qtd.value) || 0 });
             });
 
-            // Coleta os dados de conformidade, incluindo observações e evidências
             document.querySelectorAll('.checklist-item').forEach(item => {
-                const itemId = item.dataset.itemId;
-                const radioChecked = item.querySelector('input[type="radio"]:checked');
-                const observacao = item.querySelector('.observacao-container textarea');
+                const id = item.dataset.itemId;
+                const radio = item.querySelector('input[type="radio"]:checked');
+                const obs = item.querySelector('.observacao-container textarea, #detalhesSemDocumento textarea');
                 const preview = item.querySelector('.preview-container');
-                
-                if (radioChecked) {
-                    dadosParaSalvar.checklistConformidade[itemId.toLowerCase()] = radioChecked.value;
-                }
-                if (observacao) {
-                    dadosParaSalvar.checklistConformidade[`observacao${itemId}`] = observacao.value;
-                }
-                if (preview && preview.dataset.base64) {
-                    dadosParaSalvar.checklistConformidade[`evidencia${itemId}`] = preview.dataset.base64;
+                const numDoc = item.querySelector('#numeroDocumento');
+
+                if(id === 'DocumentoTransporte') {
+                    if(radio) dadosParaSalvar.checklistConformidade.documentoTransporte = radio.value;
+                    if(numDoc) dadosParaSalvar.checklistConformidade.numeroDocumentoAnexo = numDoc.value;
+                    if(obs) dadosParaSalvar.checklistConformidade.descricaoSemDocumento = obs.value;
+                    if(preview?.dataset.base64) dadosParaSalvar.checklistConformidade.evidenciaDocumentoAnexo = preview.dataset.base64;
+                } else {
+                    if(radio) dadosParaSalvar.checklistConformidade[id.toLowerCase()] = radio.value;
+                    if(obs) dadosParaSalvar.checklistConformidade[`observacao${id}`] = obs.value;
+                    if(preview?.dataset.base64) dadosParaSalvar.checklistConformidade[`evidencia${id}`] = preview.dataset.base64;
                 }
             });
 
-            // Enviar os dados para o backend
             try {
                 const response = await fetch('http://localhost:3000/api/checklists', {
                     method: 'POST',
@@ -174,10 +215,8 @@ if (!loggedInUser) {
                 form.reset();
                 location.reload();
             } catch (error) {
-                console.error('Erro ao enviar para o servidor:', error);
                 alert(`Erro ao salvar: ${error.message}`);
             }
         });
-
     });
 }

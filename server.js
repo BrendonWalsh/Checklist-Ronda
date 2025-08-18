@@ -1,6 +1,6 @@
 // 1. Importar TODOS os pacotes necessários
 const express = require('express');
-const mongoose = require('mongoose'); // GARANTIR QUE ESTA LINHA ESTEJA AQUI
+const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 
@@ -10,17 +10,15 @@ const PORT = 3000;
 
 // 3. Configurar os "Middlewares"
 app.use(cors());
-// Aumentar o limite do corpo da requisição para aceitar imagens grandes em Base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
 
 // 4. Conectar ao banco de dados MongoDB
 mongoose.connect('mongodb://localhost:27017/seculus-ronda')
   .then(() => console.log('Conectado ao MongoDB com sucesso!'))
   .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
-// --- LÓGICA DE USUÁRIOS (sem alterações) ---
+// --- LÓGICA DE USUÁRIOS ---
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true }
@@ -62,9 +60,25 @@ app.post('/api/users/login', async (req, res) => {
     }
 });
 
+// --- LÓGICA DO CONTADOR DE OCORRÊNCIAS ---
+const counterSchema = new mongoose.Schema({
+    _id: { type: String, required: true },
+    sequence_value: { type: Number, default: 0 }
+});
+const Counter = mongoose.model('Counter', counterSchema);
 
-// --- LÓGICA DO CHECKLIST (ATUALIZADA) ---
+async function getNextSequenceValue(sequenceName) {
+    const sequenceDocument = await Counter.findByIdAndUpdate(
+        sequenceName,
+        { $inc: { sequence_value: 1 } },
+        { new: true, upsert: true }
+    );
+    return sequenceDocument.sequence_value;
+}
+
+// --- LÓGICA DO CHECKLIST ---
 const checklistSchema = new mongoose.Schema({
+  occurrenceNumber: { type: Number, unique: true },
   dataChecagem: { type: Date, required: true },
   horaChecagem: { type: String, required: true },
   seguranca: { type: String, required: true },
@@ -72,21 +86,19 @@ const checklistSchema = new mongoose.Schema({
   setorOrigem: { type: String, required: true },
   setorDestino: { type: String, required: true },
   produtos: [{ tipo: String, quantidade: Number }],
-  validacaoDocumento: { type: String, enum: ['com_doc', 'sem_doc'], required: true },
-  numeroDocumento: String,
-  descricaoProdutos: String,
   checklistConformidade: { 
+    documentoTransporte: String,
+    numeroDocumentoAnexo: String,
+    evidenciaDocumentoAnexo: String,
+    descricaoSemDocumento: String,
     cracha: String,
     observacaoCracha: String,
-    evidenciaCracha: String, // Para guardar a imagem Base64
-
+    evidenciaCracha: String,
     formulario: String,
     observacaoFormulario: String,
     evidenciaFormulario: String,
-
     material: String,
     observacaoMaterial: String,
-
     embalagem: String,
     observacaoEmbalagem: String,
     evidenciaEmbalagem: String,
@@ -101,12 +113,24 @@ const Checklist = mongoose.model('Checklist', checklistSchema);
 
 app.post('/api/checklists', async (req, res) => {
   try {
-    const novoChecklist = new Checklist(req.body);
+    const occurrenceNumber = await getNextSequenceValue('occurrenceId');
+    const checklistData = { ...req.body, occurrenceNumber };
+    
+    const novoChecklist = new Checklist(checklistData);
     await novoChecklist.save();
     res.status(201).json({ message: 'Checklist salvo com sucesso!', data: novoChecklist });
   } catch (error) {
     console.error("Erro ao salvar o checklist:", error);
     res.status(400).json({ message: 'Erro ao salvar o checklist.', error: error.message });
+  }
+});
+
+app.get('/api/checklists', async (req, res) => {
+  try {
+    const checklists = await Checklist.find().sort({ occurrenceNumber: -1 });
+    res.status(200).json(checklists);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar histórico de checklists.' });
   }
 });
 

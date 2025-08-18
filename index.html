@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checklist Ronda</title>
     
-    <!-- Script de proteção executado primeiro -->
     <script src="js/script.js"></script>
-
-    <!-- Bibliotecas e Estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,240 +16,90 @@
         .header { background-color: #1f2937; color: white; padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .form-label { font-weight: 500; color: #374151; margin-bottom: 0.5rem; display: block; }
         .form-input, .form-select, .form-textarea { width: 100%; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 0.75rem; transition: border-color 0.2s, box-shadow 0.2s; }
-        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
         .btn { padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; text-align: center; transition: background-color 0.2s, transform 0.1s; cursor: pointer; }
         .btn-primary { background-color: #2563eb; color: white; }
         .btn-primary:hover { background-color: #1d4ed8; }
         .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
-        .btn-secondary { background-color: #4b5563; color: white; }
-        .btn-secondary:hover { background-color: #374151; }
-        .btn-tertiary { background-color: #e5e7eb; color: #374151; }
-        .btn-tertiary:hover { background-color: #d1d5db; }
-        .btn-danger { background-color: #dc2626; color: white; }
-        .btn-danger:hover { background-color: #b91c1c; }
-        .required-label::after { content: '*'; color: #ef4444; margin-left: 0.25rem; }
-        .status-conforme { background-color: #dcfce7; color: #166534; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; }
-        .status-nao-conforme { background-color: #fee2e2; color: #991b1b; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; }
         .image-preview { max-width: 100px; max-height: 100px; border-radius: 0.5rem; margin-top: 0.5rem; border: 1px solid #e5e7eb; object-fit: cover; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
     </style>
 </head>
-<body class="hidden"> <!-- O corpo começa escondido para evitar piscar antes da verificação de login -->
-    <!-- Cabeçalho Fixo -->
+<body class="hidden">
     <header class="header flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4">
             <img src="https://placehold.co/100x40/1f2937/ffffff?text=SECULUS" alt="Logo Seculus" class="h-10">
             <h1 class="text-xl md:text-2xl font-bold hidden sm:block">DOCUMENTO DE CIRCULAÇÃO DE PRODUTOS</h1>
         </div>
         <div class="flex items-center gap-2">
-            <button class="btn btn-tertiary text-sm">Voltar</button>
-            <button id="saveDraft" class="btn btn-secondary text-sm">Salvar Rascunho</button>
-            <button id="logoutBtn" class="btn btn-danger text-sm">Sair</button>
+            <button id="backToMenuBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm">Voltar</button>
+            <button id="saveDraftBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Salvar Rascunho</button>
         </div>
     </header>
 
     <main class="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
         <form id="checklistForm">
-            <!-- Seção 1: Dados da Ronda e Colaborador -->
             <section class="section-card">
                 <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">1. Dados da Ronda e Colaborador</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="checkDate" class="form-label">Data da Checagem</label>
-                        <input type="date" id="checkDate" class="form-input">
-                    </div>
-                    <div>
-                        <label for="checkTime" class="form-label">Hora da Checagem</label>
-                        <input type="time" id="checkTime" class="form-input">
-                    </div>
-                    <div>
-                        <label for="securityUser" class="form-label">Segurança (Usuário Logado)</label>
-                        <input type="text" id="securityUser" class="form-input bg-gray-100" value="Nome do Segurança" readonly>
-                    </div>
-                    <div>
-                        <label for="colaborador" class="form-label required-label">Colaborador Abordado</label>
-                        <input type="text" id="colaborador" class="form-input" placeholder="Digite o nome ou matrícula" required>
-                    </div>
-                    <div>
-                        <label for="setorOrigem" class="form-label required-label">Setor de Origem</label>
-                        <select id="setorOrigem" class="form-select" required>
-                            <option value="">Selecione o setor</option>
-                            <option value="Produção">Produção</option>
-                            <option value="Almoxarifado">Almoxarifado</option>
-                            <option value="Logística">Logística</option>
-                            <option value="Engenharia">Engenharia</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="setorDestino" class="form-label required-label">Setor Destino</label>
-                        <select id="setorDestino" class="form-select" required>
-                            <option value="">Selecione o setor</option>
-                            <option value="Produção">Produção</option>
-                            <option value="Almoxarifado">Almoxarifado</option>
-                            <option value="Logística">Logística</option>
-                            <option value="Qualidade">Qualidade</option>
-                        </select>
-                    </div>
+                    <div><label for="checkDate" class="form-label">Data da Checagem</label><input type="date" id="checkDate" class="form-input"></div>
+                    <div><label for="checkTime" class="form-label">Hora da Checagem</label><input type="time" id="checkTime" class="form-input"></div>
+                    <div><label for="securityUser" class="form-label">Segurança (Usuário Logado)</label><input type="text" id="securityUser" class="form-input bg-gray-100" readonly></div>
+                    <div><label for="colaborador" class="form-label">Colaborador Abordado</label><input type="text" id="colaborador" class="form-input" placeholder="Digite o nome ou matrícula" required></div>
+                    <div><label for="setorOrigem" class="form-label">Setor de Origem</label><select id="setorOrigem" class="form-select" required><option value="">Selecione o setor</option><option value="Produção">Produção</option><option value="Almoxarifado">Almoxarifado</option></select></div>
+                    <div><label for="setorDestino" class="form-label">Setor Destino</label><select id="setorDestino" class="form-select" required><option value="">Selecione o setor</option><option value="Produção">Produção</option><option value="Almoxarifado">Almoxarifado</option></select></div>
                 </div>
             </section>
 
-            <!-- Seção 2: Detalhes da Circulação de Produtos -->
             <section class="section-card">
                 <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">2. Detalhes da Circulação de Produtos</h2>
-                <label class="form-label required-label">Produtos em Circulação (Tipo e Quantidade)</label>
+                <label class="form-label">Produtos em Circulação (Tipo e Quantidade)</label>
                 <div class="space-y-3">
-                    <div class="flex items-center gap-4">
-                        <input type="checkbox" id="tipoProduto1" name="tipoProduto" value="partes" class="h-5 w-5 rounded">
-                        <label for="tipoProduto1" class="flex-grow">PARTES E PEÇAS / MATERIA-PRIMA</label>
-                        <input type="number" name="qtdProduto1" class="form-input w-24" placeholder="Qtd." min="1">
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <input type="checkbox" id="tipoProduto2" name="tipoProduto" value="relogios" class="h-5 w-5 rounded">
-                        <label for="tipoProduto2" class="flex-grow">PRODUTO ACABADO-RELOGIOS</label>
-                        <input type="number" name="qtdProduto2" class="form-input w-24" placeholder="Qtd." min="1">
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <input type="checkbox" id="tipoProduto3" name="tipoProduto" value="acessorios" class="h-5 w-5 rounded">
-                        <label for="tipoProduto3" class="flex-grow">ACESSÓRIOS</label>
-                        <input type="number" name="qtdProduto3" class="form-input w-24" placeholder="Qtd." min="1">
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <input type="checkbox" id="tipoProduto4" name="tipoProduto" value="embalagens" class="h-5 w-5 rounded">
-                        <label for="tipoProduto4" class="flex-grow">EMBALAGENS (ESTOJOS, DISPLAY, ETC.)</label>
-                        <input type="number" name="qtdProduto4" class="form-input w-24" placeholder="Qtd." min="1">
-                    </div>
+                    <div class="flex items-center gap-4"><input type="checkbox" id="tipoProduto1" name="tipoProduto" value="partes" class="h-5 w-5 rounded"><label for="tipoProduto1" class="flex-grow">PARTES E PEÇAS / MATERIA-PRIMA</label><input type="number" name="qtdProduto1" class="form-input w-24" placeholder="Qtd." min="1"></div>
+                    <div class="flex items-center gap-4"><input type="checkbox" id="tipoProduto2" name="tipoProduto" value="relogios" class="h-5 w-5 rounded"><label for="tipoProduto2" class="flex-grow">PRODUTO ACABADO-RELOGIOS</label><input type="number" name="qtdProduto2" class="form-input w-24" placeholder="Qtd." min="1"></div>
+                    <div class="flex items-center gap-4"><input type="checkbox" id="tipoProduto3" name="tipoProduto" value="acessorios" class="h-5 w-5 rounded"><label for="tipoProduto3" class="flex-grow">ACESSÓRIOS</label><input type="number" name="qtdProduto3" class="form-input w-24" placeholder="Qtd." min="1"></div>
+                    <div class="flex items-center gap-4"><input type="checkbox" id="tipoProduto4" name="tipoProduto" value="embalagens" class="h-5 w-5 rounded"><label for="tipoProduto4" class="flex-grow">EMBALAGENS (ESTOJOS, DISPLAY, ETC.)</label><input type="number" name="qtdProduto4" class="form-input w-24" placeholder="Qtd." min="1"></div>
                 </div>
             </section>
 
-            <!-- Seção 3: Validação do Documento -->
             <section class="section-card">
-                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">3. Validação do Documento e Descrição</h2>
-                <label class="form-label required-label">Dados dos Produtos em Circulação</label>
-                <div class="space-y-4">
-                    <div>
-                        <input type="radio" id="comDocumento" name="validacaoDocumento" value="com_doc" class="h-4 w-4" required>
-                        <label for="comDocumento" class="ml-2 font-medium">1) CONFORME DOCUMENTO ANEXO (SGQ, SAP, EMAIL)</label>
-                        <div id="detalhesComDocumento" class="mt-3 pl-6 space-y-3 hidden">
-                            <label for="numeroDocumento" class="form-label required-label">Número do Documento Anexo</label>
-                            <input type="text" id="numeroDocumento" class="form-input" placeholder="Ex: OS 12345">
-                            <label class="form-label">Upload do Documento (Foto)</label>
-                            <div class="flex gap-4 flex-wrap">
-                                <button type="button" class="btn btn-tertiary"><i class="fas fa-camera mr-2"></i>Tirar Foto</button>
-                                <button type="button" class="btn btn-tertiary"><i class="fas fa-image mr-2"></i>Anexar da Galeria</button>
-                            </div>
-                            <div id="galleryPreview" class="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <input type="radio" id="semDocumento" name="validacaoDocumento" value="sem_doc" class="h-4 w-4">
-                        <label for="semDocumento" class="ml-2 font-medium">2) SEM DOCUMENTO CONTROLADO, DESCREVER ABAIXO:</label>
-                        <div id="detalhesSemDocumento" class="mt-3 pl-6 hidden">
-                            <label for="descricaoProdutos" class="form-label required-label">Descrição dos Produtos</label>
-                            <textarea id="descricaoProdutos" class="form-textarea" rows="4" placeholder="Descreva detalhadamente os produtos, quantidades, modelos, etc."></textarea>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Seção 4: Checklist de Conformidade -->
-            <section class="section-card">
-                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">4. Checklist de Conformidade</h2>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">3. Checklist de Conformidade</h2>
                 <div class="space-y-6">
-                    <!-- Item 1 (Crachá) -->
-                    <div class="checklist-item" data-item-id="Cracha">
-                        <p class="form-label required-label">Item 1: Colaborador está com Crachá?</p>
-                        <div class="flex gap-6">
-                            <label><input type="radio" name="checkCracha" value="sim" class="mr-2" required>SIM</label>
-                            <label><input type="radio" name="checkCracha" value="nao" class="mr-2">NÃO</label>
-                        </div>
-                        <div class="observacao-container hidden mt-3 space-y-2">
-                            <label class="form-label">Observação Específica</label>
-                            <textarea class="form-textarea" rows="2" placeholder="Descreva o motivo da não conformidade."></textarea>
-                            <div class="flex gap-2 flex-wrap">
-                                <button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button>
-                                <button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button>
-                            </div>
-                            <input type="file" class="hidden file-input" accept="image/*">
-                            <div class="preview-container"></div>
-                        </div>
-                    </div>
-                    <!-- Item 2 (Formulário) -->
-                    <div class="checklist-item" data-item-id="Formulario">
-                        <p class="form-label required-label">Item 2: Formulário de Transferência preenchido e assinado?</p>
-                        <div class="flex gap-6">
-                            <label><input type="radio" name="checkFormulario" value="sim" class="mr-2" required>SIM</label>
-                            <label><input type="radio" name="checkFormulario" value="nao" class="mr-2">NÃO</label>
-                        </div>
-                        <div class="observacao-container hidden mt-3 space-y-2">
-                            <label class="form-label">Observação Específica</label>
-                            <textarea class="form-textarea" rows="2" placeholder="Descreva o motivo da não conformidade."></textarea>
-                            <div class="flex gap-2 flex-wrap">
-                                <button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button>
-                                <button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button>
-                            </div>
-                            <input type="file" class="hidden file-input" accept="image/*">
-                            <div class="preview-container"></div>
-                        </div>
-                    </div>
-                    <!-- Item 3 (Material) -->
-                    <div class="checklist-item" data-item-id="Material">
-                        <p class="form-label required-label">Item 3: Material transportado confere com a descrição/documento?</p>
-                        <div class="flex gap-6">
-                            <label><input type="radio" name="checkMaterial" value="sim" class="mr-2" required>SIM</label>
-                            <label><input type="radio" name="checkMaterial" value="nao" class="mr-2">NÃO</label>
-                        </div>
-                        <div class="observacao-container hidden mt-3">
-                            <label class="form-label">Observação Específica</label>
-                            <textarea class="form-textarea" rows="2" placeholder="Descreva o motivo da não conformidade."></textarea>
-                        </div>
-                    </div>
-                    <!-- Item 4 (Embalagem) -->
-                    <div class="checklist-item" data-item-id="Embalagem">
-                        <p class="form-label required-label">Item 4: Embalagem/Lacre está íntegro?</p>
-                        <div class="flex gap-6">
-                            <label><input type="radio" name="checkEmbalagem" value="sim" class="mr-2" required>SIM</label>
-                            <label><input type="radio" name="checkEmbalagem" value="nao" class="mr-2">NÃO</label>
-                        </div>
-                        <div class="observacao-container hidden mt-3 space-y-2">
-                            <label class="form-label">Observação Específica</label>
-                            <textarea class="form-textarea" rows="2" placeholder="Descreva o motivo da não conformidade."></textarea>
-                            <div class="flex gap-2 flex-wrap">
-                                <button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button>
-                                <button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button>
-                            </div>
-                            <input type="file" class="hidden file-input" accept="image/*">
-                            <div class="preview-container"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="numeroLacre" class="form-label">Número do Lacre (se aplicável)</label>
-                        <input type="text" id="numeroLacre" class="form-input" placeholder="Digite o número do lacre">
-                    </div>
+                    <div class="checklist-item" data-item-id="DocumentoTransporte"><p class="form-label">Item 1: Possui Documento de Transporte?</p><div class="flex gap-6"><label><input type="radio" name="checkDocumentoTransporte" value="sim" class="mr-2" required>SIM</label><label><input type="radio" name="checkDocumentoTransporte" value="nao" class="mr-2">NÃO</label></div><div id="detalhesComDocumento" class="hidden mt-3 pl-6 space-y-3"><label for="numeroDocumento" class="form-label">Número do Documento Anexo</label><input type="text" id="numeroDocumento" class="form-input" placeholder="Ex: OS 12345"><label class="form-label">Upload do Documento (Foto)</label><div class="flex gap-2 flex-wrap"><button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button><button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button></div><input type="file" class="hidden file-input" accept="image/*"><div class="preview-container"></div></div><div id="detalhesSemDocumento" class="hidden mt-3 pl-6"><label for="descricaoProdutos" class="form-label">Descrição dos Produtos</label><textarea id="descricaoProdutos" class="form-textarea" rows="4" placeholder="Descreva detalhadamente os produtos..."></textarea></div></div>
+                    <div class="checklist-item" data-item-id="Cracha"><p class="form-label">Item 2: Colaborador está com Crachá?</p><div class="flex gap-6"><label><input type="radio" name="checkCracha" value="sim" class="mr-2" required>SIM</label><label><input type="radio" name="checkCracha" value="nao" class="mr-2">NÃO</label></div><div class="observacao-container hidden mt-3 space-y-2"><label class="form-label">Observação Específica</label><textarea class="form-textarea" rows="2"></textarea><div class="flex gap-2 flex-wrap"><button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button><button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button></div><input type="file" class="hidden file-input" accept="image/*"><div class="preview-container"></div></div></div>
+                    <div class="checklist-item" data-item-id="Formulario"><p class="form-label">Item 3: Formulário de Transferência preenchido e assinado?</p><div class="flex gap-6"><label><input type="radio" name="checkFormulario" value="sim" class="mr-2" required>SIM</label><label><input type="radio" name="checkFormulario" value="nao" class="mr-2">NÃO</label></div><div class="observacao-container hidden mt-3 space-y-2"><label class="form-label">Observação Específica</label><textarea class="form-textarea" rows="2"></textarea><div class="flex gap-2 flex-wrap"><button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button><button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button></div><input type="file" class="hidden file-input" accept="image/*"><div class="preview-container"></div></div></div>
+                    <div class="checklist-item" data-item-id="Material"><p class="form-label">Item 4: Material transportado confere com a descrição/documento?</p><div class="flex gap-6"><label><input type="radio" name="checkMaterial" value="sim" class="mr-2" required>SIM</label><label><input type="radio" name="checkMaterial" value="nao" class="mr-2">NÃO</label></div><div class="observacao-container hidden mt-3"><label class="form-label">Observação Específica</label><textarea class="form-textarea" rows="2"></textarea></div></div>
+                    <div class="checklist-item" data-item-id="Embalagem"><p class="form-label">Item 5: Embalagem/Lacre está íntegro?</p><div class="flex gap-6"><label><input type="radio" name="checkEmbalagem" value="sim" class="mr-2" required>SIM</label><label><input type="radio" name="checkEmbalagem" value="nao" class="mr-2">NÃO</label></div><div class="observacao-container hidden mt-3 space-y-2"><label class="form-label">Observação Específica</label><textarea class="form-textarea" rows="2"></textarea><div class="flex gap-2 flex-wrap"><button type="button" class="btn btn-tertiary text-sm take-photo-btn"><i class="fas fa-camera mr-2"></i>Tirar Foto</button><button type="button" class="btn btn-tertiary text-sm upload-btn"><i class="fas fa-image mr-2"></i>Anexar Imagem</button></div><input type="file" class="hidden file-input" accept="image/*"><div class="preview-container"></div></div></div>
+                    <div><label for="numeroLacre" class="form-label">Número do Lacre (se aplicável)</label><input type="text" id="numeroLacre" class="form-input" placeholder="Digite o número do lacre"></div>
                 </div>
             </section>
 
-            <!-- Seção 5: Observações Gerais -->
             <section class="section-card">
-                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">5. Observações Gerais</h2>
-                <label for="obsGeral" class="form-label">Observação Geral</label>
-                <textarea id="obsGeral" class="form-textarea" rows="4" placeholder="Adicione aqui qualquer observação geral sobre a checagem."></textarea>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">4. Observações Gerais</h2>
+                <label for="obsGeral" class="form-label">Observação Geral</label><textarea id="obsGeral" class="form-textarea" rows="4"></textarea>
             </section>
 
-            <!-- Seção 6: Conclusão -->
             <section class="section-card">
-                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">6. Conclusão da Checagem</h2>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">5. Conclusão da Checagem</h2>
                 <div class="flex items-center gap-4">
                     <label class="form-label">Status da Checagem:</label>
-                    <span id="statusChecagem" class="text-gray-500 font-medium">Aguardando preenchimento...</span>
+                    <span id="statusChecagem" class="font-medium px-3 py-1 rounded-full">Aguardando preenchimento...</span>
                 </div>
             </section>
 
-            <!-- Botão Final -->
-            <div class="mt-6 mb-8">
-                <button type="submit" id="finalizarBtn" class="btn btn-primary w-full text-lg" disabled>
-                    Finalizar Checagem (Salvar e Notificar)
-                </button>
-            </div>
+            <div class="mt-6 mb-8"><button type="submit" id="finalizarBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg w-full text-lg" disabled>Finalizar Checagem (Salvar e Notificar)</button></div>
         </form>
     </main>
+
+    <div id="customConfirmModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Salvar Rascunho</h3>
+            <p class="text-gray-600 mb-6">Deseja salvar o checklist como rascunho antes de voltar ao menu?</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirmNoBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg w-full">Não</button>
+                <button id="confirmYesBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Sim</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

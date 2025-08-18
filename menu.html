@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Principal - Sistema de Ronda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .menu-button {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .menu-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-md">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <img src="https://placehold.co/120x50/ffffff/000000?text=SECULUS" alt="Logo Seculus" class="h-10">
+                    <h1 class="text-2xl font-bold text-gray-800">Painel de Controle</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="welcomeUser" class="text-gray-600 hidden sm:block"></span>
+                    <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Iniciar Checklist -->
+                    <a href="index.html" class="menu-button bg-blue-600 text-white p-8 rounded-xl flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-clipboard-list fa-3x mb-4"></i>
+                        <h2 class="text-xl font-bold">Iniciar Check-list Segurança</h2>
+                        <p class="mt-2 text-blue-100">Preencher um novo formulário de ronda.</p>
+                    </a>
+
+                    <!-- Visualizar Ocorrências -->
+                    <a href="historico.html" class="menu-button bg-gray-700 text-white p-8 rounded-xl flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-history fa-3x mb-4"></i>
+                        <h2 class="text-xl font-bold">Visualizar Ocorrências</h2>
+                        <p class="mt-2 text-gray-300">Consultar o histórico de checklists finalizados.</p>
+                    </a>
+
+                    <!-- Rascunhos -->
+                    <a href="#" class="menu-button bg-yellow-500 text-white p-8 rounded-xl flex flex-col items-center justify-center text-center opacity-50 cursor-not-allowed">
+                        <i class="fas fa-save fa-3x mb-4"></i>
+                        <h2 class="text-xl font-bold">Rascunhos</h2>
+                        <p class="mt-2 text-yellow-100">(Em breve)</p>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/menu.js"></script>
+</body>
+</html>

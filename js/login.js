@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        errorMessageDiv.classList.add('hidden'); // Esconde mensagens de erro antigas
+        errorMessageDiv.classList.add('hidden');
 
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
@@ -24,12 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.message || 'Erro de autenticação');
             }
 
-            // Se o login for bem-sucedido:
-            // 1. Salva o usuário logado no armazenamento local do navegador
             localStorage.setItem('loggedInUser', result.username);
-
-            // 2. Redireciona para a página principal do checklist
-            window.location.href = 'index.html';
+            
+            // LINHA ATUALIZADA: Redireciona para o menu principal
+            window.location.href = 'menu.html';
 
         } catch (error) {
             errorMessageDiv.textContent = `Erro: ${error.message}`;
